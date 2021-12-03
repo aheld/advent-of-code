@@ -13,7 +13,7 @@ type Cmd struct {
 	distance  int
 }
 
-func part1(cmds []string) int {
+func parseCmd(cmds []string) []Cmd {
 	commands := make([]Cmd, len(cmds))
 	for i := 0; i < len(cmds); i++ {
 		parsedCmd := strings.Split(cmds[i], " ")
@@ -21,6 +21,10 @@ func part1(cmds []string) int {
 		cmd := Cmd{parsedCmd[0], distance}
 		commands[i] = cmd
 	}
+	return commands
+}
+func part1(cmds []string) int {
+	commands := parseCmd(cmds)
 	totalDistance := 0
 	totalDepth := 0
 	for i := 0; i < len(commands); i++ {
@@ -36,27 +40,23 @@ func part1(cmds []string) int {
 	return totalDistance * totalDepth
 }
 
-func part2(depthStrings []string) int {
-	depths := make([]int, len(depthStrings))
-	for i, _ := range depthStrings {
-		depths[i], _ = strconv.Atoi(depthStrings[i])
-	}
-
-	windows := make([]int, len(depths)-2)
-	for i := 0; i < len(windows); i++ {
-		windows[i] = depths[i] + depths[i+1] + depths[i+2]
-	}
-
-	ascends := 0
-	last_depth := windows[0]
-	for i := 1; i < len(windows); i++ {
-		var depth = windows[i]
-		if depth > last_depth {
-			ascends++
+func part2(cmds []string) int {
+	commands := parseCmd(cmds)
+	aim := 0
+	totalDistance := 0
+	totalDepth := 0
+	for i := 0; i < len(commands); i++ {
+		switch commands[i].direction {
+		case "forward":
+			totalDistance = totalDistance + commands[i].distance
+			totalDepth = totalDepth + (commands[i].distance * aim)
+		case "down":
+			aim = aim + commands[i].distance
+		case "up":
+			aim = aim - commands[i].distance
 		}
-		last_depth = depth
 	}
-	return ascends
+	return totalDistance * totalDepth
 }
 
 func main() {
@@ -70,7 +70,7 @@ func main() {
 	input := strings.Split(string(fileBytes), "\n")
 
 	fmt.Printf("\nPart1: %v", part1(input))
-	// fmt.Printf("\nPart2: %v", part2(input))
+	fmt.Printf("\nPart2: %v", part2(input))
 	fmt.Println("\nDone")
 
 }

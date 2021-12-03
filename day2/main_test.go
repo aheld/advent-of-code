@@ -25,7 +25,7 @@ func Test_Part1(t *testing.T) {
 			name:      "example",
 			cmds:      strings.Split(input, "\n"),
 			expected:  150,
-			expected2: 5,
+			expected2: 900,
 		},
 	}
 	for _, tt := range tests {
@@ -34,10 +34,10 @@ func Test_Part1(t *testing.T) {
 			if res != tt.expected {
 				t.Errorf("part1() = %v, wanted %v", res, tt.expected)
 			}
-			// res = part2(tt.depths)
-			// if res != tt.expected2 {
-			// 	t.Errorf("part2() = %v, wanted %v", res, tt.expected2)
-			// }
+			res = part2(tt.cmds)
+			if res != tt.expected2 {
+				t.Errorf("part2() = %v, wanted %v", res, tt.expected2)
+			}
 		})
 	}
 }
