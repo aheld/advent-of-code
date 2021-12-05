@@ -15,11 +15,14 @@ func part1(game Game) int {
 }
 
 func part2(game Game) int {
-	return -1
+	return game.getPuzzleSolution2()
 }
 
 type Board struct {
-	cells [][]int
+	cells       [][]int
+	winner      bool
+	winningDraw int
+	drawsAtWin  []int
 }
 
 type Game struct {
@@ -87,12 +90,62 @@ func (g *Game) FindWinner() Board {
 	return Board{}
 }
 
+func getWinnersAndLosers(draws []int, boards []Board) ([]Board, []Board) {
+	winner := make([]Board, 0)
+	loser := make([]Board, 0)
+	for _, b := range boards {
+		if b.isWinner(draws) {
+			winner = append(winner, b)
+			b.winningDraw = draws[len(draws)-1]
+			b.drawsAtWin = draws
+			b.winner = true
+		} else {
+			loser = append(loser, b)
+		}
+	}
+	return winner, loser
+}
+
+func (g *Game) FindLastWinner() Board {
+	g.drawn = make([]int, 0)
+	boards := make([]Board, len(g.boards))
+	copy(boards, g.boards)
+	allWinners := make([]Board, 0)
+	var winners []Board
+	for _, d := range g.draws {
+		g.drawn = append(g.drawn, d)
+		winners, boards = getWinnersAndLosers(g.drawn, boards)
+		allWinners = append(allWinners, winners...)
+		if len(boards) == 0 {
+			fmt.Println("Done")
+			break
+		}
+		fmt.Println("\n\nDrawn ", g.drawn)
+		fmt.Println("Winners")
+		for _, b := range allWinners {
+			fmt.Print(b.cells[0][0], ", ")
+		}
+		fmt.Println("\nLosers")
+		for _, b := range boards {
+			fmt.Print(b.cells[0][0], ", ")
+		}
+		fmt.Println()
+	}
+	return allWinners[len(allWinners)-1]
+}
+
 func (b *Board) isWinner(drawn []int) bool {
 	for i := 0; i < 5; i++ {
 		if isRowWinner(drawn, b.cells[i]) {
+			b.winner = true
+			b.winningDraw = drawn[len(drawn)-1]
+			b.drawsAtWin = drawn
 			return true
 		}
 		if isColumnWinner(drawn, b.cells, i) {
+			b.winner = true
+			b.winningDraw = drawn[len(drawn)-1]
+			b.drawsAtWin = drawn
 			return true
 		}
 	}
@@ -107,6 +160,19 @@ func (b *Board) justGetAllCells() []int {
 		}
 	}
 	return allCells
+}
+
+func (g *Game) getPuzzleSolution2() int {
+	board := g.FindLastWinner()
+	unmarked := 0
+	for _, c := range board.justGetAllCells() {
+		if !isNumberDrawn(board.drawsAtWin, c) {
+			unmarked = unmarked + c
+		}
+	}
+	fmt.Println("unmarked", unmarked)
+	fmt.Println("winning draw", board)
+	return unmarked * board.winningDraw
 }
 
 func (g *Game) getPuzzleSolution() int {
@@ -160,6 +226,6 @@ func main() {
 	game := readInput("input.txt")
 
 	fmt.Printf("\nPart1: %v", part1(game))
-	// fmt.Printf("\nPart2: %v", part2(input))
+	fmt.Printf("\nPart2: %v", part2(game))
 	fmt.Println("\nDone")
 }

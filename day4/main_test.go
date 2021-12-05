@@ -86,5 +86,12 @@ func Test_Part1_Board(t *testing.T) {
 			t.Errorf("Wrong, you get no stars , expected the 4512, got %v", res)
 		}
 	})
+	t.Run("Puzzle - part 2", func(t *testing.T) {
+		game := readInput("test_input.txt")
+		res := game.getPuzzleSolution2()
+		if !(res == 1924) {
+			t.Errorf("Wrong, you get no stars , expected the 1924, got %v", res)
+		}
+	})
 
 }
