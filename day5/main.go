@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -18,10 +19,6 @@ func part1(cmds []Cmd) int {
 		}
 	}
 	return total
-}
-
-func part2() int {
-	return -1
 }
 
 type Point struct {
@@ -67,7 +64,42 @@ func (c *Cmd) getLine() []Point {
 			return paintLine(c.start, length, f)
 		}
 	}
-	return []Point{}
+	if c.isDiagonal() {
+		//bottom left -> top right
+		if c.start.x < c.end.x && c.start.y < c.end.y {
+			f := func(start Point) Point {
+				return Point{x: start.x + 1, y: start.y + 1}
+			}
+			length := c.end.y - c.start.y
+			return paintLine(c.start, length, f)
+		}
+		//top right to bottom left
+		if c.end.y < c.start.y && c.end.x < c.start.x {
+			f := func(start Point) Point {
+				return Point{x: start.x - 1, y: start.y - 1}
+			}
+			length := c.start.y - c.end.y
+			return paintLine(c.start, length, f)
+		}
+		//top left to bottom right
+		if c.start.x < c.end.x && c.start.y > c.end.y {
+			f := func(start Point) Point {
+				return Point{x: start.x + 1, y: start.y - 1}
+			}
+			length := c.start.y - c.end.y
+			return paintLine(c.start, length, f)
+		}
+		//bottom right to top left
+		if c.start.x > c.end.x && c.start.y < c.end.y {
+			f := func(start Point) Point {
+				return Point{x: start.x - 1, y: start.y + 1}
+			}
+			length := c.start.x - c.end.x
+			return paintLine(c.start, length, f)
+		}
+	}
+	panic("There is no point")
+	// return []Point{}
 }
 
 func paintLine(start Point, length int, next func(Point) Point) []Point {
@@ -111,8 +143,11 @@ func MakeCmd(input string) Cmd {
 	return cmd
 }
 
-func (c *Cmd) isValid() bool {
-	return (c.start.x == c.end.x || c.start.y == c.end.y)
+func (c *Cmd) isValid(allowDiags bool) bool {
+	if allowDiags {
+		return c.isVertical() || c.isHorizontal() || c.isDiagonal()
+	}
+	return c.isHorizontal() || c.isVertical()
 }
 
 func (c *Cmd) isHorizontal() bool {
@@ -123,15 +158,24 @@ func (c *Cmd) isVertical() bool {
 	return c.start.x == c.end.x
 }
 
-func parseCmds(filename string) []Cmd {
+func (c *Cmd) isDiagonal() bool {
+	return math.Abs(float64(c.start.y-c.end.y)) == math.Abs(float64(c.start.x-c.end.x))
+}
+
+func parseCmds(filename string, allowDiags bool) []Cmd {
 	input := loadFile(filename)
 
 	commands := make([]Cmd, 0)
 	lines := strings.Split(input, "\n")
 	for _, line := range lines {
 		cmd := MakeCmd(line)
-		if cmd.isValid() {
+		if cmd.isValid(allowDiags) {
 			commands = append(commands, cmd)
+		} else {
+			if allowDiags {
+				fmt.Println("Rejected ", allowDiags, cmd)
+				panic("No get here")
+			}
 		}
 	}
 	return commands
@@ -147,8 +191,12 @@ func loadFile(filename string) string {
 }
 
 func main() {
-	cmds := parseCmds("input.txt")
+	cmds := parseCmds("input.txt", false)
 	fmt.Printf("\nPart1: %v", part1(cmds))
-	fmt.Printf("\nPart2: %v", part2())
+	fmt.Println("\nPart1 len ", len(cmds))
+	//part 2 is the same as part1, so reuse the code and just conditionally allow diags in the cmds
+	cmds = parseCmds("input.txt", true)
+	fmt.Println("\npart2 len ", len(cmds))
+	fmt.Printf("\nPart2: %v", part1(cmds))
 	fmt.Println("\nDone")
 }
