@@ -8,34 +8,123 @@ import (
 	"strings"
 )
 
-// type PotentialSegment struct {
-// 	top         []string
-// 	topLeft     []string
-// 	topRight    []string
-// 	middle      []string
-// 	bottomLeft  []string
-// 	bottomRight []string
-// 	bottom      []string
-// }
-type Position string
-
-const (
-	Top         Position = "top"
-	TopLeft     Position = "topleft"
-	TopRight    Position = "topright"
-	Middle      Position = "middle"
-	BottomLeft  Position = "bottomleft"
-	BottomRight Position = "bottomright"
-	Bottom      Position = "bottom"
-)
+var segments = map[string]int{
+	"abcefg":  0,
+	"cf":      1,
+	"acdeg":   2,
+	"acdfg":   3,
+	"bcdf":    4,
+	"abdfg":   5,
+	"abdefg":  6,
+	"acf":     7,
+	"abcdefg": 8,
+	"abcdfg":  9,
+}
 
 type Entry struct {
 	allDigits   []string
 	easyNumbers []string
 	display     []string
 	appearances int
-	//	potentialSegments PotentialSegment
-	potentialSegments map[Position]string
+}
+
+func part2(filename string) int {
+
+	answer := make([]string, 0)
+	for v := range segments {
+		answer = append(answer, normalizeSegment(v))
+	}
+	sort.Strings(answer)
+
+	data := strings.Split(loadFile(filename), "\n")
+	entries := buildEntries(data)
+	input := []rune("abcdefg")
+	translations := getPerms(string(input))
+	total := 0
+	for _, entry := range entries {
+		for i := 0; i < len(translations); i++ {
+			translation := translations[i]
+			newAlldigits := make([]string, 0)
+			for _, origDigit := range entry.allDigits {
+				newDigit := translateDigit(origDigit, input, translation)
+				newAlldigits = append(newAlldigits, normalizeSegment(newDigit))
+			}
+			match := stringArrayEqual(newAlldigits, answer)
+			if match {
+				readout := make([]string, 4)
+				for i, v := range entry.display {
+					readout[i] = normalizeSegment(translateDigit(v, input, translation))
+				}
+				display := 0
+				for _, v := range readout {
+					display = display*10 + segments[v]
+				}
+				fmt.Println(display)
+				total += display
+			}
+		}
+	}
+	return total
+}
+
+func translateDigit(origDigit string, input []rune, translation string) string {
+	newDigit := origDigit
+	for x, tx := range input {
+		newDigit = strings.Replace(newDigit, string(tx), fmt.Sprint(x), -1)
+	}
+	for x, tx := range strings.Split(translation, "") {
+		newDigit = strings.Replace(newDigit, fmt.Sprint(x), string(tx), -1)
+	}
+	return newDigit
+}
+
+func isElementExist(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+func stringArrayEqual(a, b []string) bool {
+	for _, v := range a {
+		if !isElementExist(b, v) {
+			return false
+		}
+	}
+	return true
+}
+
+func insertAt(i int, char string, perm string) string {
+	start := perm[0:i]
+	end := perm[i:]
+	return start + char + end
+}
+
+// https://gist.github.com/athap/0f2d2b1c84a8c03fadd9
+func getPerms(str string) []string {
+	// base case, for one char, all perms are [char]
+	if len(str) == 1 {
+		return []string{str}
+	}
+
+	current := str[0:1] // current char
+	remStr := str[1:]   // remaining string
+
+	perms := getPerms(remStr) // get perms for remaining string
+
+	allPerms := make([]string, 0) // array to hold all perms of the string based on perms of substring
+
+	// for every perm in the perms of substring
+	for _, perm := range perms {
+		// add current char at every possible position
+		for i := 0; i <= len(perm); i++ {
+			newPerm := insertAt(i, current, perm)
+			allPerms = append(allPerms, newPerm)
+		}
+	}
+	return allPerms
 }
 
 func normalizeSegment(segment string) string {
@@ -61,22 +150,16 @@ func buildEntries(lines []string) []Entry {
 	for x, line := range lines {
 		linepart := strings.Split(line, " | ")
 		entry := Entry{
-			allDigits:         strings.Split(linepart[0], " "),
-			easyNumbers:       make([]string, 0),
-			display:           strings.Split(linepart[1], " "),
-			appearances:       0,
-			potentialSegments: make(map[Position]string),
+			allDigits:   strings.Split(linepart[0], " "),
+			easyNumbers: make([]string, 0),
+			display:     strings.Split(linepart[1], " "),
+			appearances: 0,
 		}
 		for i, v := range entry.allDigits {
 			entry.allDigits[i] = normalizeSegment(v)
 		}
 		for i, v := range entry.display {
 			entry.display[i] = normalizeSegment(v)
-		}
-		apppendTo := func(segments []Position, potentialSegments string) {
-			for _, v := range segments {
-				entry.potentialSegments[v] = entry.potentialSegments[v] + potentialSegments
-			}
 		}
 		for _, v := range entry.allDigits {
 			switch len(v) {
@@ -92,53 +175,16 @@ func buildEntries(lines []string) []Entry {
 				8: 7 *
 				9: 6 *
 			*/
-			case 6:
-				//0
-				apppendTo([]Position{Top, TopRight, BottomRight, TopLeft, BottomLeft, Bottom}, v)
-				//6
-				apppendTo([]Position{Top, Middle, BottomRight, TopLeft, BottomLeft, Bottom}, v)
-				//9
-				apppendTo([]Position{Top, Middle, TopRight, TopLeft, BottomRight, Bottom}, v)
 			case 3: //7
 				entry.easyNumbers = append(entry.easyNumbers, v)
-				apppendTo([]Position{Top, TopRight, BottomRight}, v)
 			case 2: //1
 				entry.easyNumbers = append(entry.easyNumbers, v)
-				apppendTo([]Position{TopRight, BottomRight}, v)
 			case 4: //4
 				entry.easyNumbers = append(entry.easyNumbers, v)
-				apppendTo([]Position{TopLeft, TopRight, Middle, BottomRight}, v)
-			case 5:
-				//5
-				apppendTo([]Position{Top, TopLeft, Middle, BottomRight, Bottom}, v)
-				//2
-				apppendTo([]Position{Top, TopRight, Middle, BottomLeft, Bottom}, v)
-				//3
-				apppendTo([]Position{Top, TopRight, Middle, BottomRight, Bottom}, v)
 			case 7: //8
 				entry.easyNumbers = append(entry.easyNumbers, v)
-				apppendTo([]Position{Top, TopRight, TopLeft, Middle, BottomRight, BottomLeft, Bottom}, v)
 			}
-
-			type void struct{}
-			var member void
-			for k, segment := range entry.potentialSegments {
-				set := make(map[string]void)
-				entry.potentialSegments[k] = normalizeSegment(v)
-				for _, v := range strings.Split(segment, "") {
-					set[v] = member
-				}
-				combined := make([]string, 0)
-				for s := range set {
-					combined = append(combined, s)
-				}
-				sort.Strings(combined)
-				entry.potentialSegments[k] = strings.Join(combined, "")
-			}
-
 		}
-		fmt.Printf("%+v \n", entry.potentialSegments)
-
 		entries[x] = entry
 	}
 	return entries
@@ -156,18 +202,6 @@ func part1(filename string) int {
 	// fmt.Println(data)
 	// fmt.Println(len(data))
 	return total
-}
-
-func part2(filename string) int {
-	data := strings.Split(loadFile(filename), "\n")
-	entries := buildEntries(data)
-	// find top
-	for _, entry := range entries {
-		for c, v := range entry.potentialSegments {
-			fmt.Println(c, v)
-		}
-	}
-	return -1
 }
 
 func loadFile(filename string) string {
