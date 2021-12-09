@@ -8,22 +8,34 @@ import (
 	"strings"
 )
 
-type PotentialSegment struct {
-	top         []string
-	topLeft     []string
-	topRight    []string
-	middle      []string
-	bottomLeft  []string
-	bottomRight []string
-	bottom      []string
-}
+// type PotentialSegment struct {
+// 	top         []string
+// 	topLeft     []string
+// 	topRight    []string
+// 	middle      []string
+// 	bottomLeft  []string
+// 	bottomRight []string
+// 	bottom      []string
+// }
+type Position string
+
+const (
+	Top         Position = "top"
+	TopLeft     Position = "topleft"
+	TopRight    Position = "topright"
+	Middle      Position = "middle"
+	BottomLeft  Position = "bottomleft"
+	BottomRight Position = "bottomright"
+	Bottom      Position = "bottom"
+)
 
 type Entry struct {
-	allDigits         []string
-	easyNumbers       []string
-	display           []string
-	appearances       int
-	potentialSegments PotentialSegment
+	allDigits   []string
+	easyNumbers []string
+	display     []string
+	appearances int
+	//	potentialSegments PotentialSegment
+	potentialSegments map[Position]string
 }
 
 func normalizeSegment(segment string) string {
@@ -32,32 +44,11 @@ func normalizeSegment(segment string) string {
 	return strings.Join(segments, "")
 }
 
-func compareSegments(a string, b string) bool {
-	// if len(a) != len(b) {
-	// 	return false
-	// }
-	// segmentsA := strings.Split(a, "")
-	// segmentsB := strings.Split(b, "")
-	// sort.Strings(segmentsA)
-	// sort.Strings(segmentsB)
-	// strA := strings.Join(segmentsA, "")
-	// strB := strings.Join(segmentsB, "")
-
-	//return normalizeSegment(a) == normalizeSegment(b)
-	return a == b
-	// for i, v := range segmentsA {
-	// 	if v != segmentsB[i] {
-	// 		return false
-	// 	}
-	// }
-	// return true
-}
-
 func countMatches(numbers []string, display []string) int {
 	count := 0
 	for _, n := range numbers {
 		for _, d := range display {
-			if compareSegments(n, d) {
+			if n == d {
 				count++
 			}
 		}
@@ -74,7 +65,7 @@ func buildEntries(lines []string) []Entry {
 			easyNumbers:       make([]string, 0),
 			display:           strings.Split(linepart[1], " "),
 			appearances:       0,
-			potentialSegments: PotentialSegment{},
+			potentialSegments: make(map[Position]string),
 		}
 		for i, v := range entry.allDigits {
 			entry.allDigits[i] = normalizeSegment(v)
@@ -82,24 +73,72 @@ func buildEntries(lines []string) []Entry {
 		for i, v := range entry.display {
 			entry.display[i] = normalizeSegment(v)
 		}
-		//1, 4, 7, or 8
-		for _, v := range entry.allDigits {
-			switch len(v) {
-			case 3: //7
-				entry.easyNumbers = append(entry.easyNumbers, v)
-				// this is top, topRight, bottomRight
-				entry.potentialSegments.top = append(entry.potentialSegments.top, v)
-				entry.potentialSegments.topRight = append(entry.potentialSegments.topRight, v)
-				entry.potentialSegments.bottomRight = append(entry.potentialSegments.bottomRight, v)
-			case 2: //1
-				entry.easyNumbers = append(entry.easyNumbers, v)
-			case 4: //4
-				entry.easyNumbers = append(entry.easyNumbers, v)
-			case 7: //8
-				entry.easyNumbers = append(entry.easyNumbers, v)
+		apppendTo := func(segments []Position, potentialSegments string) {
+			for _, v := range segments {
+				entry.potentialSegments[v] = entry.potentialSegments[v] + potentialSegments
 			}
 		}
-		entry.appearances += countMatches(entry.easyNumbers, entry.display)
+		for _, v := range entry.allDigits {
+			switch len(v) {
+			/*
+				0: 6 *
+				1: 2 *
+				2: 5 *
+				3: 5 *
+				4: 4 *
+				5: 5 *
+				6: 6 *
+				7: 3 *
+				8: 7 *
+				9: 6 *
+			*/
+			case 6:
+				//0
+				apppendTo([]Position{Top, TopRight, BottomRight, TopLeft, BottomLeft, Bottom}, v)
+				//6
+				apppendTo([]Position{Top, Middle, BottomRight, TopLeft, BottomLeft, Bottom}, v)
+				//9
+				apppendTo([]Position{Top, Middle, TopRight, TopLeft, BottomRight, Bottom}, v)
+			case 3: //7
+				entry.easyNumbers = append(entry.easyNumbers, v)
+				apppendTo([]Position{Top, TopRight, BottomRight}, v)
+			case 2: //1
+				entry.easyNumbers = append(entry.easyNumbers, v)
+				apppendTo([]Position{TopRight, BottomRight}, v)
+			case 4: //4
+				entry.easyNumbers = append(entry.easyNumbers, v)
+				apppendTo([]Position{TopLeft, TopRight, Middle, BottomRight}, v)
+			case 5:
+				//5
+				apppendTo([]Position{Top, TopLeft, Middle, BottomRight, Bottom}, v)
+				//2
+				apppendTo([]Position{Top, TopRight, Middle, BottomLeft, Bottom}, v)
+				//3
+				apppendTo([]Position{Top, TopRight, Middle, BottomRight, Bottom}, v)
+			case 7: //8
+				entry.easyNumbers = append(entry.easyNumbers, v)
+				apppendTo([]Position{Top, TopRight, TopLeft, Middle, BottomRight, BottomLeft, Bottom}, v)
+			}
+
+			type void struct{}
+			var member void
+			for k, segment := range entry.potentialSegments {
+				set := make(map[string]void)
+				entry.potentialSegments[k] = normalizeSegment(v)
+				for _, v := range strings.Split(segment, "") {
+					set[v] = member
+				}
+				combined := make([]string, 0)
+				for s := range set {
+					combined = append(combined, s)
+				}
+				sort.Strings(combined)
+				entry.potentialSegments[k] = strings.Join(combined, "")
+			}
+
+		}
+		fmt.Printf("%+v \n", entry.potentialSegments)
+
 		entries[x] = entry
 	}
 	return entries
@@ -110,8 +149,9 @@ func part1(filename string) int {
 	data := strings.Split(loadFile(filename), "\n")
 	entries := buildEntries(data)
 	total := 0
-	for _, v := range entries {
-		total += v.appearances
+	for _, entry := range entries {
+		entry.appearances += countMatches(entry.easyNumbers, entry.display)
+		total += entry.appearances
 	}
 	// fmt.Println(data)
 	// fmt.Println(len(data))
@@ -119,6 +159,14 @@ func part1(filename string) int {
 }
 
 func part2(filename string) int {
+	data := strings.Split(loadFile(filename), "\n")
+	entries := buildEntries(data)
+	// find top
+	for _, entry := range entries {
+		for c, v := range entry.potentialSegments {
+			fmt.Println(c, v)
+		}
+	}
 	return -1
 }
 
