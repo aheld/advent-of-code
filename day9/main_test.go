@@ -14,7 +14,7 @@ func Test_Part1(t *testing.T) {
 		{
 			name:      "test_input.txt",
 			expected:  15,
-			expected2: 0,
+			expected2: 1134,
 		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
