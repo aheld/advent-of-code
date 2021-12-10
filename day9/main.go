@@ -45,52 +45,9 @@ func (b *Board) Print() {
 	}
 }
 
-type Acc struct {
-	lowestPoint    Point
-	pointsToCheck  []Point
-	pointsChecked  []Point
-	pointsAccepted []Point
-}
-
-type Answers []Acc
-
-func (a Answers) Len() int { return len(a) }
-
-//sort high to low
-func (a Answers) Less(i, j int) bool { return len(a[i].pointsAccepted) > len(a[j].pointsAccepted) }
-func (a Answers) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-
 type Basin struct {
 	lowestPoint Point
 	lowPoints   []Point
-}
-
-func getBasin(board Board, acc Acc) Acc {
-	if len(acc.pointsToCheck) == 0 || len(acc.pointsToCheck) > 20 {
-		return acc
-	}
-
-	p := acc.pointsToCheck[0]
-	acc.pointsToCheck = append(acc.pointsToCheck[:0], acc.pointsToCheck[1:]...)
-	acc.pointsChecked = append(acc.pointsChecked, p)
-
-	surrounding := getSurroundingPoints(board, p)
-	for _, s := range surrounding {
-		if board.isLower(p, s) {
-			acc.pointsToCheck = append(acc.pointsToCheck, s)
-			acc.pointsAccepted = append(acc.pointsAccepted, p)
-		}
-	}
-
-	acc.pointsChecked = append(acc.pointsChecked, p)
-
-	acc.pointsAccepted = dedupePoints(acc.pointsAccepted)
-	acc.pointsChecked = dedupePoints(acc.pointsChecked)
-
-	acc.pointsToCheck = filterPoints(acc.pointsToCheck, acc.pointsAccepted)
-	acc.pointsToCheck = dedupePoints(acc.pointsToCheck)
-
-	return getBasin(board, acc)
 }
 
 type Stack []Point
@@ -134,15 +91,15 @@ func fillBasin(board Board, start Point) (Board, Basin) {
 			surrounding := getSurroundingPoints(board, p)
 			for _, s := range surrounding {
 				stack = stack.Push(s)
-				// fmt.Print(s, board.get(s), " ")
 			}
-			// fmt.Print("\n")
 		}
-		// fmt.Println("Basin ", basin.lowPoints)
 	}
 	return board, basin
 }
 
+// LoadBoard adds 9 padding
+// loadBoard does not
+// steal someone elses code, this is a mess
 func LoadBoard(filename string) Board {
 	//9pad
 	board := loadBoard(filename)
@@ -208,20 +165,6 @@ func dedupePoints(points []Point) []Point {
 	return res
 }
 
-func filterPoints(points []Point, removeList []Point) []Point {
-	ret := make([]Point, 0)
-	for _, p := range points {
-		for _, s := range removeList {
-			if s.x == p.x && s.y == p.y {
-				continue
-			} else {
-				ret = append(ret, p)
-			}
-		}
-	}
-	// fmt.Println("Filtered ", points, " ", removeList, " ", ret)
-	return ret
-}
 func part1(filename string) int {
 	board := loadBoard(filename)
 	// fmt.Println(board)
