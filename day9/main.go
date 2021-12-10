@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,6 +23,10 @@ func (b *Board) get(p Point) int {
 	return b.cells[p.y][p.x]
 }
 
+func (b *Board) set(p Point, v int) {
+	b.cells[p.y][p.x] = v
+}
+
 func (b *Board) top() int {
 	return len(b.cells) - 1
 }
@@ -32,6 +37,12 @@ func (b *Board) right() int {
 
 func (b *Board) isLower(a Point, a2 Point) bool {
 	return b.get(a) < b.get(a2)
+}
+
+func (b *Board) Print() {
+	for _, v := range b.cells {
+		fmt.Println(v)
+	}
 }
 
 type Acc struct {
@@ -49,8 +60,10 @@ func (a Answers) Len() int { return len(a) }
 func (a Answers) Less(i, j int) bool { return len(a[i].pointsAccepted) > len(a[j].pointsAccepted) }
 func (a Answers) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-// totalPoints = totalPoints * len(acc.pointsAccepted)
-//var getBasin func(Acc) Acc
+type Basin struct {
+	lowestPoint Point
+	lowPoints   []Point
+}
 
 func getBasin(board Board, acc Acc) Acc {
 	if len(acc.pointsToCheck) == 0 || len(acc.pointsToCheck) > 20 {
@@ -77,71 +90,110 @@ func getBasin(board Board, acc Acc) Acc {
 	acc.pointsToCheck = filterPoints(acc.pointsToCheck, acc.pointsAccepted)
 	acc.pointsToCheck = dedupePoints(acc.pointsToCheck)
 
-	// fmt.Println("OUTGOING")
-	// fmt.Println("Points to Check", acc.pointsToCheck)
-	// fmt.Println("Points Accepted", acc.pointsAccepted)
-	// fmt.Println("Points  Checked", acc.pointsChecked)
 	return getBasin(board, acc)
 }
 
-func part2(filename string) int {
-	board := loadBoard(filename)
+type Stack []Point
 
-	type Basin struct {
-		lowestPoint Point
-		lowPoints   []Point
+func (s Stack) Push(v Point) Stack {
+	return append(s, v)
+}
+
+func (s Stack) Len() int {
+	return len(s)
+}
+
+func (s Stack) Pop() (Stack, Point, error) {
+	l := len(s)
+	if l == 0 {
+		return s, Point{}, errors.New("stack is empty")
 	}
+	return s[:l-1], s[l-1], nil
+}
 
-	basins := make([]Basin, 0)
+func fillBasin(board Board, start Point) (Board, Basin) {
+	basin := Basin{lowestPoint: start, lowPoints: []Point{start}}
 
+	stack := Stack{start}
+	for {
+		if len(stack) <= 0 {
+			break
+		}
+		var p Point
+		var err error
+		stack, p, err = stack.Pop()
+		if err != nil {
+			panic(err)
+		}
+		value := board.get(p)
+		if value != -1 && value != 9 {
+			basin.lowPoints = append(basin.lowPoints, p)
+			if value != 9 {
+				board.set(p, -1)
+			}
+			surrounding := getSurroundingPoints(board, p)
+			for _, s := range surrounding {
+				stack = stack.Push(s)
+				// fmt.Print(s, board.get(s), " ")
+			}
+			// fmt.Print("\n")
+		}
+		// fmt.Println("Basin ", basin.lowPoints)
+	}
+	return board, basin
+}
+
+func LoadBoard(filename string) Board {
+	//9pad
+	board := loadBoard(filename)
+	nineRow := make([]int, 0)
+	for i := 0; i < len(board.cells[0]); i++ {
+		nineRow = append(nineRow, 9)
+	}
+	board.cells = append([][]int{nineRow}, board.cells...)
+	board.cells = append(board.cells, nineRow)
+	for i := 0; i < len(board.cells); i++ {
+		board.cells[i] = append([]int{9}, board.cells[i]...)
+		board.cells[i] = append(board.cells[i], 9)
+	}
+	return board
+}
+
+func getAllPointsAtLevel(board Board, level int) []Point {
+	res := make([]Point, 0)
 	for x := 0; x <= board.right(); x++ {
 		for y := 0; y <= board.top(); y++ {
 			p := Point{x: x, y: y}
-			isLowPiont := isLowPiont(board, p)
-			if isLowPiont {
-				lowPoints := []Point{p}
-				basin := Basin{lowestPoint: p, lowPoints: lowPoints}
-				basins = append(basins, basin)
+			if board.get(p) == level {
+				res = append(res, p)
 			}
 		}
 	}
+	return res
+}
 
-	answers := []Acc{}
-	total := 1
-	for _, b := range basins {
-		// fmt.Println("Basin ", b.lowestPoint.x, b.lowestPoint.y)
-		pointsToCheck := []Point{b.lowestPoint}
-		acc := Acc{
-			pointsToCheck:  pointsToCheck,
-			pointsAccepted: []Point{b.lowestPoint},
-			pointsChecked:  []Point{},
-			lowestPoint:    b.lowestPoint,
+func part2(filename string) int {
+	board := LoadBoard(filename)
+	basins := make([]Basin, 0)
+
+	for level := 0; level <= board.top(); level++ {
+		points := getAllPointsAtLevel(board, level)
+		for _, p := range points {
+			_, basin := fillBasin(board, p)
+			basins = append(basins, basin)
 		}
-
-		acc = getBasin(board, acc)
-		// fmt.Println("Basin ", b.lowestPoint.x, b.lowestPoint.y)
-		// fmt.Println("Points to Check", acc.pointsToCheck)
-		// fmt.Println("Points Accepted", acc.pointsAccepted)
-		// fmt.Println("Points  Checked", acc.pointsChecked)
-		answers = append(answers, acc)
 	}
-	sort.Sort(Answers(answers))
-
-	fmt.Println("Sorted")
-	for i := 0; i < len(answers); i++ {
-		fmt.Println(len(answers[i].pointsAccepted), " ", answers[i].lowestPoint)
-		total *= len(answers[i].pointsAccepted)
+	totals := make([]int, 0)
+	for _, b := range basins {
+		b.lowPoints = dedupePoints(b.lowPoints)
+		totals = append(totals, len(b.lowPoints))
+	}
+	sort.Ints(totals)
+	total := 1
+	for i := len(totals); i > len(totals)-3; i-- {
+		total *= totals[i-1]
 	}
 	return total
-	//176715 - too low
-	//134514
-
-	/*
-			62   {3 77}
-		54   {13 95}
-		51   {96 5}
-		51   {47 95}
-	*/
 }
 
 func dedupePoints(points []Point) []Point {
