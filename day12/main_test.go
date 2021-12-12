@@ -31,14 +31,12 @@ func Test_Part1(t *testing.T) {
 			res := part1(tt.name)
 			if res != tt.expected {
 				t.Errorf("%v = %v, wanted %v", tt.name, res, tt.expected)
-
 			}
 		})
 		t.Run(tt.name+" Part 2", func(t *testing.T) {
 			res := part2(tt.name)
-			if res != tt.expected {
+			if res != tt.expected2 {
 				t.Errorf("part 2 %v = %v, wanted %v", tt.name, res, tt.expected2)
-
 			}
 		})
 	}
