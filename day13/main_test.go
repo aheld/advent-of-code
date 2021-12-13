@@ -21,9 +21,9 @@ func Test_Part1(t *testing.T) {
 			if res != tt.expected {
 				t.Errorf("part1() = %v, wanted %v", res, tt.expected)
 			}
-			res = part2(tt.name)
-			if res != tt.expected2 {
-				t.Errorf("part2() = %v, wanted %v", res, tt.expected2)
+			res2 := part2(tt.name)
+			if res2 != tt.expected2 {
+				t.Errorf("part2() = %v, wanted %v", res2, tt.expected2)
 			}
 		})
 	}

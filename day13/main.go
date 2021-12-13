@@ -18,11 +18,50 @@ func (b *Board) AddPoint(p Point) {
 	b.pointMap[key] = p
 }
 
+func (b *Board) getHeightAndWidth() (int, int) {
+	width := 0
+	height := 0
+	for _, p := range b.pointMap {
+		if p.x > width {
+			width = p.x
+		}
+		if p.y > height {
+			height = p.y
+		}
+	}
+	return height, width
+}
+
 func (b *Board) MovePoint(p Point, x int, y int) {
 	oldKey := fmt.Sprintf("%d,%d", p.x, p.y)
+	_, OK := b.pointMap[oldKey]
+	if !OK {
+		panic(oldKey + " Point not found")
+	}
 	delete(b.pointMap, oldKey)
 	key := fmt.Sprintf("%d,%d", x, y)
-	b.pointMap[key] = p
+	b.pointMap[key] = Point{x, y}
+}
+
+func (b *Board) hasPoint(p Point) bool {
+	key := fmt.Sprintf("%d,%d", p.x, p.y)
+	_, ok := b.pointMap[key]
+	return ok
+}
+
+func (b *Board) Print() {
+	height, width := b.getHeightAndWidth()
+	for y := 0; y <= height; y++ {
+		output := ""
+		for x := 0; x <= width; x++ {
+			if b.hasPoint(Point{x: x, y: y}) {
+				output += "#"
+			} else {
+				output += " "
+			}
+		}
+		fmt.Println(output)
+	}
 }
 
 type Point struct {
@@ -50,7 +89,7 @@ func extractPoint(input string) (Point, error) {
 	return Point{x, y}, nil
 }
 
-func part1(filename string) int {
+func makeBoard(filename string) (*Board, Input) {
 	input := Input{}
 	input.points = []Point{}
 	input.folds = []Fold{}
@@ -73,7 +112,6 @@ func part1(filename string) int {
 			}
 			f := Fold{along: foldChunks[0], value: value}
 			input.folds = append(input.folds, f)
-			fmt.Println("Fold", f)
 		}
 	}
 	fmt.Println("Points ", len(input.points))
@@ -82,6 +120,11 @@ func part1(filename string) int {
 	for _, p := range input.points {
 		b.AddPoint(p)
 	}
+	return &b, input
+}
+
+func part1(filename string) int {
+	b, input := makeBoard(filename)
 	foldOn := input.folds[0]
 	if foldOn.along == "y" {
 		for _, p := range input.points {
@@ -99,10 +142,37 @@ func part1(filename string) int {
 			}
 		}
 	}
+	// b.Print()
+
 	return len(b.pointMap)
 }
 
 func part2(filename string) int {
+	b, input := makeBoard(filename)
+	fmt.Println("start ")
+	b.Print()
+	for i, foldOn := range input.folds {
+		fmt.Println("Fold ", i, foldOn)
+		if foldOn.along == "y" {
+			for _, p := range b.pointMap {
+				if p.y > foldOn.value {
+					newY := foldOn.value - (p.y - foldOn.value)
+					b.MovePoint(p, p.x, newY)
+				}
+			}
+		} else {
+			for _, p := range b.pointMap {
+				if p.x > foldOn.value {
+					newX := foldOn.value - (p.x - foldOn.value)
+					b.MovePoint(p, newX, p.y)
+				}
+			}
+		}
+		fmt.Println("")
+		fmt.Println("Fold ", i)
+		b.Print()
+	}
+
 	return -1
 }
 
