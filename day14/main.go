@@ -63,8 +63,12 @@ func parseInput(filename string) (string, []Insertions) {
 }
 
 func part1(filename string) int {
+	return run(filename, 10)
+}
+
+func run(filename string, steps int) int {
 	start, insertions := parseInput(filename)
-	end := runSteps(start, insertions, 10)
+	end := runSteps(start, insertions, steps)
 	scores := countLetters(end)
 	type Score struct {
 		letter string
@@ -72,7 +76,6 @@ func part1(filename string) int {
 	}
 	max := Score{letter: "", score: 0}
 	for k, v := range scores {
-		fmt.Println(k, v)
 		if v > max.score {
 			max.letter = k
 			max.score = v
@@ -85,12 +88,55 @@ func part1(filename string) int {
 			min.score = v
 		}
 	}
-	fmt.Println(max, min)
 	return max.score - min.score
 }
 
 func part2(filename string) int {
-	return -1
+	counts := doAlgo(filename, 40)
+	fmt.Println(counts)
+	max := 0
+	for _, v := range counts {
+		if v > max {
+			max = v
+		}
+	}
+	min := max
+	for _, v := range counts {
+		if v < min {
+			min = v
+		}
+	}
+	return max - min
+}
+
+// I needed this. I will commit my shame
+// https://www.reddit.com/r/adventofcode/comments/rfzq6f/comment/hoktmbx/
+func doAlgo(filename string, count int) map[string]int {
+	start, insertions := parseInput(filename)
+	counts := make(map[string]int)
+	for _, c := range start {
+		counts[string(c)]++
+	}
+	pairs := make(map[string]int)
+	for i := 0; i < len(start)-1; i++ {
+		pairs[start[i:i+2]]++
+	}
+	for i := 0; i < count; i++ {
+		newPairs := make(map[string]int)
+		for pair, pcount := range pairs {
+			for _, ins := range insertions {
+				if pair == ins.pair {
+					left := pair[0:1]
+					right := pair[1:2]
+					newPairs[left+ins.insert] += pcount
+					newPairs[ins.insert+right] += pcount
+					counts[ins.insert] = counts[ins.insert] + pcount
+				}
+			}
+		}
+		pairs = newPairs
+	}
+	return counts
 }
 
 func loadFile(filename string) string {
