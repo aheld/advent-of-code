@@ -22,7 +22,8 @@ func getNeighbors(cells [][]Point, p Point) []Point {
 	start := cells[0][0]
 	end := cells[len(cells)-1][len(cells[0])-1]
 	returnPoints := make([]Point, 0)
-	deltas := [][]int{{0, -1}, {1, 0}, {-1, 0}, {0, 1}}
+	// deltas := [][]int{{0, -1}, {1, 0}, {-1, 0}, {0, 1}}
+	deltas := [][]int{ {1, 0}, {0, 1}}
 	for _, d := range deltas {
 		x := p.x + d[0]
 		y := p.y + d[1]
@@ -51,6 +52,10 @@ func minDistance(dist map[string]int, pathSet map[string]bool) string {
 
 func getAllPaths(filename string) int {
 	cells, visited := loadData(filename)
+	return getLeastRisk(cells, visited)
+}
+
+func getLeastRisk(cells Cells, visited Visited) int {
 	totalPoints := len(cells) * len(cells[0])
 	dist := make(map[string]int, totalPoints)
 	allCells := make(map[string]Point, totalPoints)
@@ -107,25 +112,56 @@ func increaseCell(in int) int {
 
 func expandMap(filename string) (Cells, Visited) {
 	cells, _ := loadData(filename)
-	for cnt := 1; cnt <= 5; cnt++ {
-		width := len(cells)
-		height := len(cells[0])
-		fmt.Println("Width ", width, " Height ", height)
+	width := len(cells)
+	height := len(cells[0])
+
+	for cnt := 1; cnt < 5; cnt++ {
 		cells = append(cells, make([][]Point, width)...)
 		for i := 0; i < width; i++ {
 			cells[i+width*cnt] = make([]Point, height)
 		}
-		for i, row := range cells {
-			fmt.Println(i, row)
-		}
-		for y := 0; y < len(cells[0]); y++ {
-			for x := 0; x < len(cells); x++ {
-				fmt.Println("Writing ", x, y)
-				p := cells[y][x]
-				cells[x+width][y] = Point{x: p.x, y: p.y, value: increaseCell(p.value)}
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				p := cells[x+(cnt-1)*width][y]
+				offset := cnt * width
+				cells[x+offset][y] = Point{x: x + offset, y: y, value: increaseCell(p.value)}
 			}
 		}
 	}
+
+	for x := 0; x < len(cells); x++ {
+		cells[x] = append(cells[x], make([]Point, height*4)...)
+	}
+
+	// for i, row := range cells {
+	// 	output := fmt.Sprintf("%v:\t", i)
+	// 	for _, p := range row {
+	// 		output += fmt.Sprintf("%v ", p.value)
+	// 	}
+	// 	fmt.Println(output)
+	// }
+	// fmt.Println(len(cells))
+	// fmt.Println(len(cells[0]))
+
+	for cnt := 1; cnt < 5; cnt++ {
+		for x := 0; x < width; x++ {
+			for y := 0; y < height; y++ {
+				p := cells[x][y+(cnt-1)*height]
+				offset := cnt * height
+				cells[x][y+offset] = Point{x: x, y: y + offset, value: increaseCell(p.value)}
+			}
+		}
+	}
+	maxX := len(cells)
+	maxY := len(cells[0])
+	for x := width; x < maxX; x++ {
+		for y := height; y < maxY; y++ {
+			p := cells[x][y-height]
+			// fmt.Println(p)
+			cells[x][y] = Point{x: x, y: y, value: increaseCell(p.value)}
+		}
+	}
+
 	return cells, make(Visited)
 }
 
@@ -167,7 +203,16 @@ func part1(filename string) int {
 }
 
 func part2(filename string) int {
-	return -1
+	cells, _ := expandMap(filename)
+	visited := make(Visited)
+/*
+for y, rows := range cells {
+		for x := range rows {
+			visited[cells[x][y].Key()] = false
+		}
+	}
+*/
+return getLeastRisk(cells, visited)
 }
 
 func main() {
