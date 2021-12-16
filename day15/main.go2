@@ -1,0 +1,118 @@
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"math"
+	"os"
+	"strconv"
+	"strings"
+)
+
+type Point struct {
+	x, y  int
+	value int
+}
+
+func (p *Point) Key() string {
+	return fmt.Sprintf("%d_%d", p.x, p.y)
+}
+
+var allRisks []int
+
+func getAllPaths(filename string) int {
+	allRisks = make([]int, 0)
+	count = 0
+	data := strings.Split(loadFile(filename), "\n")
+	cells := make([][]Point, len(data))
+	for i := 0; i < len(data); i++ {
+		cells[i] = make([]Point, len(data[0]))
+	}
+	visited := make(map[string]bool)
+	for y, line := range data {
+		for x, c := range strings.Split(line, "") {
+			value, _ := strconv.Atoi(c)
+			p := Point{x, y, value}
+			cells[x][y] = p
+			visited[p.Key()] = false
+		}
+	}
+	cells[0][0].value = 0
+	start := cells[0][0]
+	end := cells[len(cells[0])-1][len(cells)-1]
+
+	printAllPathsUtil(start, end, visited, 0, cells)
+
+	min := math.MaxInt
+	for _, sum := range allRisks {
+		if sum < min {
+			min = sum
+		}
+	}
+	return min
+}
+
+func getNeighbors(cells [][]Point, p Point) []Point {
+	start := cells[0][0]
+	end := cells[len(cells[0])-1][len(cells)-1]
+	returnPoints := make([]Point, 0)
+	deltas := [][]int{{0, -1}, {1, 0}, {-1, 0}, {0, 1}}
+	for _, d := range deltas {
+		x := p.x + d[0]
+		y := p.y + d[1]
+		if (x >= start.x && x <= end.x) && (y >= start.y && y <= end.y) {
+			returnPoints = append(returnPoints, cells[x][y])
+		}
+	}
+	return returnPoints
+}
+
+var count int
+
+func printAllPathsUtil(start Point, end Point, visited map[string]bool, risk int, cells [][]Point) {
+	count++
+	if count > 1000000 {
+		return
+	}
+	if start.x == end.x && start.y == end.y {
+		risk += start.value
+		allRisks = append(allRisks, risk)
+		return
+	}
+	visited[start.Key()] = true
+	risk += start.value
+	for _, v := range getNeighbors(cells, start) {
+		if !visited[v.Key()] {
+			visitedCopy := make(map[string]bool)
+			for k, v := range visited {
+				visitedCopy[k] = v
+			}
+			printAllPathsUtil(v, end, visitedCopy, risk, cells)
+		}
+	}
+}
+
+func loadFile(filename string) string {
+	dat, err := ioutil.ReadFile(filename)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return string(dat)
+}
+
+func part1(filename string) int {
+	// data := strings.Split(loadFile(filename), "\n")
+	// fmt.Println(data)
+	// fmt.Println(len(data))
+	return -1
+}
+
+func part2(filename string) int {
+	return -1
+}
+
+func main() {
+	fmt.Println("Part1 ", part1("input.txt"))
+	fmt.Println("Part2 ", part2("input.txt"))
+}
