@@ -8,46 +8,18 @@ internal class MainKtTest
 
 internal class Day1Test {
 
-    @Test
-    fun testPart1() {
-        val expected: Int = 24000
-        assertEquals(part1("TestInput.txt"),expected)
-    }
-
-    @Test
-    fun testPart2() {
-        val expected: Int = 45000
-        assertEquals(part2("TestInput.txt"),expected)
-    }
-
-    @TestFactory
-    fun `part 1`() =
-        listOf(
-            "input.txt" to 66719,
-            "TestInput.txt" to 24000,
-        ).map { (filename, expected) ->
-            dynamicTest(
-                "given \"$filename\", " +
-                        "when executing part1, " +
-                        "then the total is $expected"
-            ) {
-                assertEquals(part1(filename),expected)
-            }
-        }
-
-@TestFactory
-fun `part 2`() =
-    listOf(
-        "input.txt" to 198551,
-        "TestInput.txt" to 45000,
-
-        ).map { (filename, expected) ->
+data class TestCase(val fileName: String, val part1: Int, val part2: Int)
+val testCases: List<TestCase> = listOf(
+    TestCase("input.txt",  66719,198551),
+    TestCase("TestInput.txt", 24000, 45000)
+    )
+        @TestFactory
+fun `part 2`() = testCases.map { (filename:String, part1:Int, part2:Int) ->
         dynamicTest(
-            "given \"$filename\", " +
-                    "when executing part1, " +
-                    "then the total is $expected"
+            filename
         ) {
-            assertEquals(part2(filename),expected)
+            assertEquals(part1(filename),part1)
+            assertEquals(part2(filename),part2)
         }
     }
 }
