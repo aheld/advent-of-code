@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.TestFactory
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 internal class MainKtTest
 
@@ -10,8 +9,8 @@ internal class Day1Test {
 
 data class TestCase(val fileName: String, val part1: Int, val part2: Int)
 val testCases: List<TestCase> = listOf(
-    TestCase("input.txt",  66719,198551),
-    TestCase("TestInput.txt", 24000, 45000)
+    TestCase("Day01input.txt",  66719,198551),
+    TestCase("Day01testinput.txt", 24000, 45000)
     )
         @TestFactory
 fun `part 2`() = testCases.map { (filename:String, part1:Int, part2:Int) ->
