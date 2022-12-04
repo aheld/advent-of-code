@@ -1,12 +1,12 @@
 import java.io.File
 
 fun main(args: Array<String>) {
-    println(part1("input.txt"))
-    println(part2("input.txt"))
+    println(part1("Day01input.txt"))
+    println(part2("Day01input.txt"))
 }
 
 fun loadInputAndTotal(filename: String):ArrayList<Int> {
-    val inputs = File("src/main/kotlin", filename).readLines() //.map { it.toInt() }
+    val inputs = File("src", filename).readLines() //.map { it.toInt() }
 
     var elfList = ArrayList<Int>()
     var calorieTotal = 0
