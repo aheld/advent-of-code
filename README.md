@@ -8,5 +8,5 @@
 ## 2022 - kotlin
  
 [Kotlin Sources](./2022/src)
-![](https://img.shields.io/badge/stars%20⭐-10-yellow)
-![](https://img.shields.io/badge/days%20completed-5-red)
+![](https://img.shields.io/badge/stars%20⭐-16-yellow)
+![](https://img.shields.io/badge/days%20completed-8-red)
