@@ -1,4 +1,3 @@
-import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -8,7 +7,7 @@ class TestDay12 {
     private val forrestTest = loadInput(testInput)
     private val forrest = loadInput(input)
 
-    fun testPart1(forrest: Forrest): Int {
+    private fun testPart1(forrest: Forrest): Int {
         //        val forrest = loadInput(input)
         fun getPoints(c: Char): List<Point> = forrest.indices.flatMap { x ->
             forrest[x].mapIndexed { y, elevation -> Pair(Point(x, y), elevation) }
@@ -40,7 +39,7 @@ class TestDay12 {
                 else p
             }
 
-            fun Point.getElevation() = forrest[x][y].toInt()
+            fun Point.getElevation() = forrest[x][y].code
 
             val adjacentCells = listOfNotNull(
                 validatePoint(Point(cell.x + 1, cell.y)),
@@ -68,7 +67,7 @@ class TestDay12 {
         return costs[endPoint] ?: 0
     }
 
-    fun part2(forrest: Forrest): Int {
+    private fun part2(forrest: Forrest): Int {
 
         fun getPoints(c: Char): List<Point> = forrest.indices.flatMap { x ->
             forrest[x].mapIndexed { y, elevation -> Pair(Point(x, y), elevation) }
