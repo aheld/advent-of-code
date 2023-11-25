@@ -1,6 +1,7 @@
 {
     "editor.formatOnSave": true,
     "cSpell.words": [
+        "Deque",
         "hasher",
         "pbpaste",
         "robo",

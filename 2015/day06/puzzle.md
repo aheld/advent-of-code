@@ -19,8 +19,6 @@ After following the instructions, *how many lights are lit*?
 
 Your puzzle answer was `400410`.
 
-The first half of this puzzle is complete! It provides one gold star: \*
-
 \--- Part Two ---
 ----------
 
@@ -41,8 +39,12 @@ For example:
 * `turn on 0,0 through 0,0` would increase the total brightness by `1`.
 * `toggle 0,0 through 999,999` would increase the total brightness by `2000000`.
 
-Answer:
+Your puzzle answer was `15343601`.
 
-Although it hasn't changed, you can still [get your puzzle input](6/input).
+Both parts of this puzzle are complete! They provide two gold stars: \*\*
 
-You can also [Shareon [Twitter](https://twitter.com/intent/tweet?text=I%27ve+completed+Part+One+of+%22Probably+a+Fire+Hazard%22+%2D+Day+6+%2D+Advent+of+Code+2015&url=https%3A%2F%2Fadventofcode%2Ecom%2F2015%2Fday%2F6&related=ericwastl&hashtags=AdventOfCode) [Mastodon](javascript:void(0);)] this puzzle.
+At this point, you should [return to your Advent calendar](/2015) and try another puzzle.
+
+If you still want to see it, you can [get your puzzle input](6/input).
+
+You can also [Shareon [Twitter](https://twitter.com/intent/tweet?text=I%27ve+completed+%22Probably+a+Fire+Hazard%22+%2D+Day+6+%2D+Advent+of+Code+2015&url=https%3A%2F%2Fadventofcode%2Ecom%2F2015%2Fday%2F6&related=ericwastl&hashtags=AdventOfCode) [Mastodon](javascript:void(0);)] this puzzle.

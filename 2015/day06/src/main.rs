@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 fn main() {
-    // println!("Part 1: {}", solve(include_str!("../input")));
+    println!("Part 1: {}", solve(include_str!("../input")));
     println!("Part 2: {}", solve_2(include_str!("../input")));
 }
 

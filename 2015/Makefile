@@ -22,6 +22,12 @@ help:
 	@echo ""
 	@echo "make submit day=01 part=1 answer=1234"
 
+	@echo "\n*****************"
+
+	@echo "* Download part 2 directly"
+	@echo ""
+	@echo "make download day=01"
+
 newday:
 	echo $(DIRECTORY)
 	if [ -d "./$(DIRECTORY)" ]; then \
@@ -34,4 +40,7 @@ newday:
 
 submit:
 	aoc s $(part) $(answer) -d $(day) -y $(year) && \
+	cd $(DIRECTORY) && aoc d -d $(day) -y $(year) -o
+
+download:
 	cd $(DIRECTORY) && aoc d -d $(day) -y $(year) -o

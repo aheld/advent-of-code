@@ -1,6 +1,6 @@
 fn main() {
-    println!("Hello, world!");
-    println!("{}", solve(include_str!("../input")));
+    println!("Part 1: {}", solve(include_str!("../input")));
+    println!("Part 2: {}", solve_2(include_str!("../input")));
 }
 
 #[derive(PartialEq, Debug)]
@@ -23,6 +23,11 @@ fn parse_input(input: &str) -> Vec<Move> {
 }
 
 fn solve(input: &str) -> usize {
+    let directions = parse_input(input);
+    return 10;
+}
+
+fn solve_2(input: &str) -> usize {
     let directions = parse_input(input);
     return 10;
 }
