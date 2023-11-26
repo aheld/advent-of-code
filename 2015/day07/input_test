@@ -1,8 +1,9 @@
-NOT x -> h
-123 -> x
+NOT xx -> h
+bb -> xx
 456 -> y
-x AND y -> d
-x OR y -> e
-x LSHIFT 2 -> f
-y RSHIFT 2 -> g
 NOT y -> a
+xx AND y -> d
+xx OR y -> e
+xx LSHIFT 2 -> f
+y RSHIFT 2 -> g
+123 -> bb
