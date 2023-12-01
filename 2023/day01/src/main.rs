@@ -1,32 +1,30 @@
+use phf::phf_map;
+use rstest::rstest;
 use std::str::Chars;
-use phf::{phf_map};
 
 fn main() {
     println!("Part 1: {}", solve(include_str!("../input")));
     println!("Part 2: {}", solve_2(include_str!("../input")));
 }
 
-
 fn parse_input(input: &str) -> Vec<Chars<'_>> {
-    input
-        .lines()
-        .map(|line| line.chars())
-        .collect()
+    input.lines().map(|line| line.chars()).collect()
 }
 
-fn parse_input_2(input: &str)-> Vec<&str> {
+fn parse_input_2(input: &str) -> Vec<&str> {
     input.lines().collect()
 }
 
 fn solve(input: &str) -> usize {
     let _calibration = parse_input(input);
-    // println!("{:?}", _calibration);
-    let line_totals = _calibration.iter().map(|line| {
-        let l: Vec<_> = line.clone().filter(|c| c.is_digit(10)).collect();
-        let num_str = format!("{}{}", l[0], l[l.len()-1]);
-        num_str.parse::<usize>().unwrap()
-    }).collect::<Vec<_>>();
-    // println!("{:?}", line_totals);
+    let line_totals = _calibration
+        .iter()
+        .map(|line| {
+            let l: Vec<_> = line.clone().filter(|c| c.is_ascii_digit()).collect();
+            let num_str = format!("{}{}", l[0], l[l.len() - 1]);
+            num_str.parse::<usize>().unwrap()
+        })
+        .collect::<Vec<_>>();
     return line_totals.iter().sum();
 }
 
@@ -42,29 +40,34 @@ static STRING_NUM: phf::Map<&'static str, &'static usize> = phf_map! {
     "nine" =>  &9,
 };
 
-fn solve_2(input: &str) -> usize {
-    let calibrations_input = parse_input_2(input);
-    let cals = calibrations_input.iter().map(|line| {
-        let mut numbers = Vec::new();
-        for i in 0..line.len() {
-            let c = &line[i..i+1];
-            if c.parse::<usize>().is_ok() {
-                numbers.push(c.parse::<usize>().unwrap().clone());
-                println!("********{}", c);
-                continue;
-            }
-            let substr = &line[i..line.len()];
-            println!("{}", substr);
-            for (key, value) in STRING_NUM.entries() {
-                if substr.starts_with(key) {
-                    println!("\n******\n{} {}", key, value);
-                    numbers.push(**value);
-                }
+fn parse_line(line: &&str) -> usize {
+    let mut numbers = Vec::new();
+    for i in 0..line.len() {
+        let c = &line[i..i + 1];
+        if c.parse::<usize>().is_ok() {
+            numbers.push(c.parse::<usize>().unwrap());
+            println!("********{}", c);
+            continue;
+        }
+        let substr = &line[i..line.len()];
+        println!("{}", substr);
+        for (key, value) in STRING_NUM.entries() {
+            if substr.starts_with(key) {
+                println!("\n******\n{} {}", key, value);
+                numbers.push(**value);
             }
         }
-        let num_str = format!("{}{}", numbers[0], numbers[numbers.len()-1]);
-        num_str.parse::<usize>().unwrap()
-    }).collect::<Vec<_>>();
+    }
+    let num_str = format!("{}{}", numbers[0], numbers[numbers.len() - 1]);
+    num_str.parse::<usize>().unwrap()
+}
+
+fn solve_2(input: &str) -> usize {
+    let calibrations_input = parse_input_2(input);
+    let cals = calibrations_input
+        .iter()
+        .map(parse_line)
+        .collect::<Vec<_>>();
     println!("CALS\n{:?}", cals);
     return cals.iter().sum();
 }
@@ -73,6 +76,18 @@ fn solve_2(input: &str) -> usize {
 fn test_suite() {
     let input = include_str!("../input_test");
     assert_eq!(solve(input), 142);
+}
+
+#[rstest]
+#[case("two1nine", 29)]
+#[case("eightwothree", 83)]
+#[case("abcone2threexyz", 13)]
+#[case("xtwone3four", 24)]
+#[case("4nineeightseven2", 42)]
+#[case("zoneight234", 14)]
+#[case("7pqrstsixteen", 76)]
+fn part2_test(#[case] input: &str, #[case] expected: usize) {
+    assert_eq!(expected, solve_2(input))
 }
 
 #[test]
