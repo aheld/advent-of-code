@@ -3,8 +3,12 @@ use rstest::rstest;
 use std::str::Chars;
 
 fn main() {
-    println!("Part 1: {}", solve(include_str!("../input")));
-    println!("Part 2: {}", solve_2(include_str!("../input")));
+    println!("Part 1:   {}", solve(include_str!("../input")));
+    println!("Part 2:   {}", solve_2(include_str!("../input")));
+    println!(
+        "Part 2.1: {}",
+        solve(&parse_input_2_1(include_str!("../input")))
+    );
 }
 
 fn parse_input(input: &str) -> Vec<Chars<'_>> {
@@ -13,6 +17,14 @@ fn parse_input(input: &str) -> Vec<Chars<'_>> {
 
 fn parse_input_2(input: &str) -> Vec<&str> {
     input.lines().collect()
+}
+
+fn parse_input_2_1(input: &str) -> String {
+    let mut inp = input.to_string();
+    for (key, value) in STRING_NUM_STRING.entries() {
+        inp = inp.replace(key, value);
+    }
+    inp
 }
 
 fn solve(input: &str) -> usize {
@@ -40,20 +52,29 @@ static STRING_NUM: phf::Map<&'static str, &'static usize> = phf_map! {
     "nine" =>  &9,
 };
 
+static STRING_NUM_STRING: phf::Map<&'static str, &'static str> = phf_map! {
+    "one" => "o1n",
+    "two" =>  "t2o",
+    "three" =>  "th3ree",
+    "four" =>  "f4ur",
+    "five" =>  "fi5ve",
+    "six" =>  "s6x",
+    "seven" =>  "se7en",
+    "eight" =>  "ei8jt",
+    "nine" =>  "n9ne",
+};
+
 fn parse_line(line: &&str) -> usize {
     let mut numbers = Vec::new();
     for i in 0..line.len() {
         let c = &line[i..i + 1];
         if c.parse::<usize>().is_ok() {
             numbers.push(c.parse::<usize>().unwrap());
-            println!("********{}", c);
             continue;
         }
         let substr = &line[i..line.len()];
-        println!("{}", substr);
         for (key, value) in STRING_NUM.entries() {
             if substr.starts_with(key) {
-                println!("\n******\n{} {}", key, value);
                 numbers.push(**value);
             }
         }
@@ -68,7 +89,6 @@ fn solve_2(input: &str) -> usize {
         .iter()
         .map(parse_line)
         .collect::<Vec<_>>();
-    println!("CALS\n{:?}", cals);
     return cals.iter().sum();
 }
 
@@ -78,6 +98,19 @@ fn test_suite() {
     assert_eq!(solve(input), 142);
 }
 
+#[test]
+fn test_suite_2() {
+    let input = include_str!("../input_test_2");
+    assert_eq!(solve_2(input), 281);
+}
+
+#[test]
+fn test_suite_2_1() {
+    assert_eq!(
+        solve(&parse_input_2_1(include_str!("../input_test_2"))),
+        281
+    );
+}
 #[rstest]
 #[case("two1nine", 29)]
 #[case("eightwothree", 83)]
@@ -88,10 +121,4 @@ fn test_suite() {
 #[case("7pqrstsixteen", 76)]
 fn part2_test(#[case] input: &str, #[case] expected: usize) {
     assert_eq!(expected, solve_2(input))
-}
-
-#[test]
-fn test_suite_2() {
-    let input = include_str!("../input_test_2");
-    assert_eq!(solve_2(input), 281);
 }
