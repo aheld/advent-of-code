@@ -2,6 +2,8 @@ default: help
 
 year?=$(notdir $(CURDIR))
 
+DIRECTORY=day$(day)
+
 help:
 	@echo "\n\n*****************"
 	@echo "* Download a new puzzle file and create a directory"
