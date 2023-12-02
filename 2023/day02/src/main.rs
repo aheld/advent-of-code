@@ -14,6 +14,11 @@ fn main() {
     println!("Part 2: {}", solve_2(include_str!("../input")));
 }
 
+pub fn main_for_bench() {
+    solve(include_str!("../input"));
+    solve_2(include_str!("../input"));
+}
+
 #[derive(PartialEq, Debug)]
 pub struct Draw {
     pub red: i32,
@@ -89,7 +94,7 @@ fn parse_input(input: &str) -> Vec<Game> {
         .collect()
 }
 
-fn solve(input: &str) -> i32 {
+pub fn solve(input: &str) -> i32 {
     let games = parse_input(input);
     let pg = games.iter().filter(|g| {
         let mut possible = true;
@@ -108,7 +113,7 @@ fn solve(input: &str) -> i32 {
         pg.iter().sum()
 }
 
-fn solve_2(input: &str) -> i32 {
+pub fn solve_2(input: &str) -> i32 {
     let games = parse_input(input);
     let min_cubes:Vec<Draw> = games.iter()
     .map(|g| 
