@@ -25,6 +25,9 @@ help:
 	@echo "make test"
 	@echo "make watchtest"
 
+run r:
+	cargo run
+
 test t:
 	cargo test
 

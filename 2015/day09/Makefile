@@ -25,9 +25,6 @@ help:
 	@echo "make test"
 	@echo "make watchtest"
 
-run r:
-	cargo run
-
 test t:
 	cargo test
 
@@ -36,10 +33,10 @@ watchtest wt:
 
 submit s:
 	aoc s $(part) $(answer) -d $(day) -y $(year) && \
-	aoc d -d $(day) -y $(year) -o
+	cd $(DIRECTORY) && aoc d -d $(day) -y $(year) -o
 
 download d:
-	aoc d -d $(day) -y $(year) -o
+	cd $(DIRECTORY) && aoc d -d $(day) -y $(year) -o
 
 calendar c:
 	aoc c -y $(year)
