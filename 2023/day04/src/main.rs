@@ -4,7 +4,7 @@ use nom::{
     sequence::tuple,
     IResult,
 };
-use std::collections::{HashMap};
+use std::collections::{HashMap, BTreeMap};
 
 fn main() {
     tracing_subscriber::fmt()
@@ -100,7 +100,8 @@ pub fn solve(input: &str) -> i32 {
     total as i32
 }
 
-pub fn solve_2(input: &str) -> i32 {
+//tests pass, but real input fails
+pub fn solve_2_bad(input: &str) -> i32 {
     let mut card_list: HashMap<i32, i32>= HashMap::new();
     let cards = parse_input(input);
     for card in cards.iter() {
@@ -122,7 +123,34 @@ pub fn solve_2(input: &str) -> i32 {
 
     card_list.values().into_iter().sum()
 }
+
+pub fn solve_2(input: &str) -> i32 {
+    let cards = parse_input(input);
+    let mut card_list = BTreeMap::new();
+    for card in cards.iter() {
+        card_list.insert(card.id, 1);
+    }
+    for card in cards.iter() {
+        let matches = card.get_matching().len();
+        if matches == 0 {
+            continue;
+        }
+        let card_count = card_list.get(&card.id).unwrap().clone();
+        for card_id in card.id+1..matches as i32 +1 + card.id {
+            let won_card = card_list.get(&card_id);
+            if won_card.is_none() {
+                continue;
+            }
+            let new_count =won_card.unwrap().clone() + card_count;
+            let x = card_list.get_mut(&card_id).unwrap();
+            *x = new_count;
+        }
+    }
+    card_list.values().into_iter().sum()
+}
+
 //16938803
+//18594152
 #[test]
 fn test_single_line() {
     let input = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53";
