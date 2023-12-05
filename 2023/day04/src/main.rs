@@ -4,6 +4,7 @@ use nom::{
     sequence::tuple,
     IResult,
 };
+use std::collections::{HashMap};
 
 fn main() {
     tracing_subscriber::fmt()
@@ -25,6 +26,7 @@ pub struct Card {
     pub my_numbers: Vec<i32>,
     pub card_numbers: Vec<i32>,
     pub value: i32,
+    pub count: i32,
 }
 
 fn parse_card(input: &str) -> IResult<&str, Card> {
@@ -50,6 +52,7 @@ fn parse_card(input: &str) -> IResult<&str, Card> {
             my_numbers,
             card_numbers,
             value: 1,
+            count: 1,
         },
     ))
 }
@@ -82,7 +85,7 @@ pub fn solve(input: &str) -> i32 {
     let cards = parse_input(input);
     for card in &cards {
         let matching_numbers = card.get_matching();
-        dbg!(&matching_numbers);
+        // dbg!(&matching_numbers);
         total += match matching_numbers.len() {
             0 => 0,
             1 => 1,
@@ -97,10 +100,29 @@ pub fn solve(input: &str) -> i32 {
     total as i32
 }
 
-pub fn solve_2(_input: &str) -> i32 {
-    1
-}
+pub fn solve_2(input: &str) -> i32 {
+    let mut card_list: HashMap<i32, i32>= HashMap::new();
+    let cards = parse_input(input);
+    for card in cards.iter() {
+        let _ = &card_list.entry(card.id).and_modify(|e| {
+            let one = 1;
+            *e = &*e + one;
+        }).or_insert(1);
+        let num_cards = card_list.get(&card.id).unwrap().clone();
+        let matches = card.get_matching().len();
+        println!("matches: {} for card {}", matches, card.id);
+        // println!("matches: {} for card {}", matches, card.id);
+        for card_id in card.id+1..matches as i32 +1 + card.id {
+            let _ = &card_list.entry(card_id).and_modify(|e| {
+                *e = &*e + &num_cards;
+            }).or_insert(1);
+        }
+        // dbg!(&card_list);
+    }
 
+    card_list.values().into_iter().sum()
+}
+//16938803
 #[test]
 fn test_single_line() {
     let input = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53";
@@ -148,5 +170,5 @@ fn test_solve_1() {
 fn test_solve_2() {
     let input = include_str!("../input_test");
     let res = solve_2(input);
-    assert_eq!(res, 2286);
+    assert_eq!(res, 30);
 }
