@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use nom::{
     bytes::complete::{tag, take_until1},
     character::complete::line_ending,
-    character::streaming::i32,
+    character::streaming::i64,
     multi::separated_list1,
     sequence::tuple,
     IResult,
@@ -21,37 +21,33 @@ pub fn main_for_bench() {
 
 #[derive(Debug)]
 struct Almanac {
-    seeds: Vec<i32>,
+    seeds: Vec<i64>,
     mappings: HashMap<String, Vec<AlmanacMap>>,
 }
 #[derive(Debug)]
 struct AlmanacMap {
-    dest_start: i32,
-    source_start: i32,
-    range: i32,
+    dest_start: i64,
+    source_start: i64,
+    range: i64,
 }
 
 // note - added an extra line ending to the end of the input file
 fn parse_input(input: &str) -> IResult<&str, Almanac> {
-    let (input, seeds) = tuple((tag("seeds: "), separated_list1(tag(" "), i32)))(input)?;
-    println!("Seeds: {:?}", seeds);
+    let (input, seeds) = tuple((tag("seeds: "), separated_list1(tag(" "), i64)))(input)?;
 
-    let (input, i) = tuple((line_ending, line_ending))(input)?;
-    println!("i: {:?}", i);
+    let (input, _) = tuple((line_ending, line_ending))(input)?;
     let (_, blocks) =
         separated_list1(tuple((line_ending, line_ending)), take_until1("\n\n"))(input)?;
-    println!("Blocks: {:?}", blocks);
-    let mut mappings = HashMap::new();
+
+        let mut mappings = HashMap::new();
     for block in blocks {
-        println!("Block: {}", block);
         let (input, s) = take_until1(" map:\n")(block)?;
-        print!("{} ", s);
         let (input, _) = tuple((take_until1("\n"), tag("\n")))(input)?;
         let maps = input.split('\n').map(|m|{
             let inputs = m
                 .split(' ')
-                .map(|m| m.parse::<i32>().unwrap())
-                .collect::<Vec<i32>>();
+                .map(|m| m.parse::<i64>().unwrap())
+                .collect::<Vec<i64>>();
             AlmanacMap {
                 dest_start: inputs[0],
                 source_start: inputs[1],
@@ -81,18 +77,18 @@ fn get_input(input: &str) -> Almanac{
 
 }
 
-fn find_mapped_location(seed: i32, mappings: &Vec<AlmanacMap>) -> i32 {
+fn find_mapped_location(seed: i64, mappings: &Vec<AlmanacMap>) -> i64 {
     for map in mappings {
         if seed >= map.source_start && seed < map.source_start + map.range {
             return map.dest_start + seed - map.source_start;
         }
     }
-    return seed.clone();
+    seed
 }
 
-pub fn solve(input: &str) -> i32 {
+pub fn solve(input: &str) -> i64 {
     let a = get_input(input);
-    let mut lowest  = i32::MAX;
+    let mut lowest  = i64::MAX;
     let map_list = "seed-to-soil soil-to-fertilizer fertilizer-to-water water-to-light light-to-temperature temperature-to-humidity humidity-to-location".split(' ').collect::<Vec<&str>>();
     for seed in a.seeds {
         let mut location = seed;
@@ -105,8 +101,22 @@ pub fn solve(input: &str) -> i32 {
     lowest
 }
 
-pub fn solve_2(_input: &str) -> i32 {
-    1
+pub fn solve_2(input: &str) -> i64 {
+    let a = get_input(input);
+    let mut lowest  = i64::MAX;
+    let map_list = "seed-to-soil soil-to-fertilizer fertilizer-to-water water-to-light light-to-temperature temperature-to-humidity humidity-to-location".split(' ').collect::<Vec<&str>>();
+    for seedlist in a.seeds.chunks(2) {
+        println!("Seedlist {:?}", seedlist );
+        for seed in seedlist[0]..(seedlist[0]+seedlist[1]) {
+            let mut location = seed;
+            for map in &map_list {
+                location = find_mapped_location(location, &a.mappings[*map]);
+                // println!("Seed {} maps to location {} for {}", seed, location, *map);
+            }
+        lowest = lowest.min(location);
+        }
+    }
+    lowest
 }
 
 #[test]
@@ -128,8 +138,6 @@ fn test_input_1() {
             assert!(false);
         }
     }
-    // assert_eq!(cards.len(), 1, "should be 1 games");
-    // assert_eq!(solve(input), 8);
 }
 #[test]
 fn test_solve_1() {
@@ -137,10 +145,10 @@ fn test_solve_1() {
     let location = solve(input);
     assert_eq!(location, 35);
 }
-//
-// #[test]
-// fn test_solve_2() {
-//     let input = include_str!("../input_test");
-//     let res = solve_2(input);
-//     assert_eq!(res, 30);
-// }
+
+#[test]
+fn test_solve_2() {
+    let input = include_str!("../input_test");
+    let res = solve_2(input);
+    assert_eq!(res, 46);
+}
