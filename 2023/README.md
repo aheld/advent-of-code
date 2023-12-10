@@ -11,3 +11,20 @@ note: instructions for Macos/Linux, should be similar commands for windows
     - Copy the session cookie value
     - `pbpaste > ~/.adventofcode.session`s
     
+
+## Download a new day
+
+    make newday day=01
+
+    # run tests until you get the test input working
+    cd day01
+    make watchtest
+
+    # run the main
+    make run
+
+    # submit the answer
+    make submit part=1 answer=1234"
+
+    # check your progress
+    make calendar
