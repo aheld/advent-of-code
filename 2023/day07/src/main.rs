@@ -115,12 +115,35 @@ impl CamelHandType<'_> {
     }
 }
 
+fn rank_cards(c: char) -> i32 {
+    if c.is_ascii_digit() {
+        return c.to_digit(10).unwrap() as i32;
+    }
+    match c {
+        'A' => 14,
+        'K' => 13,
+        'Q' => 12,
+        'J' => 11,
+        'T' => 10,
+        _ => panic!("unknown card value for {}", c)
+    }
+}
+
 impl Ord for CamelHandType<'_> {
     fn cmp(&self, other: &Self) -> Ordering {
-        println!("Here {:?} vs {:?}", &self, &other);
-        println!("{:?} vs {:?}", &self.rank(), &other.rank());
+        // println!("Here {:?} vs {:?}", &self, &other);
+        // println!("{:?} vs {:?}", &self.rank(), &other.rank());
         if self.rank().eq(&other.rank()) {
-            return self.cards().cmp(&other.cards());
+            for (s,o) in self.cards().cards.chars().zip(other.cards().cards.chars()) {
+                // println!("{} : {}", s, o);
+                // println!("{} : {}", rank_cards(s), rank_cards(o));
+                if rank_cards(s) == rank_cards(o) {
+                    continue
+                } else {
+                    return rank_cards(s).cmp(&rank_cards(o));
+                }
+            }
+            return Ordering::Equal;
             }
         else {
             return self.rank().cmp(&other.rank());
@@ -154,19 +177,20 @@ impl PartialEq for CamelHand<'_> {
 
 impl Eq for CamelHand<'_> {}
 
-fn parse_input(input: &str) -> usize {
-    for line in input.lines() {
-        println!("{}", line);
-        for c in line.chars() {
-            println!("{}", c);
-        }
-    }
-    1
+fn parse_input(input: &str) -> Vec<CamelHandType<'_>>{
+    input.lines().map(new_camel_hand).collect::<Vec<CamelHandType>>()
 }
 
 fn solve(input: &str) -> usize {
-    let _directions = parse_input(input);
-    10
+    let mut hands = parse_input(input);
+    hands.sort();
+    let mut total = 0;
+    for (i, h) in hands.iter().enumerate() {
+        println!("{i} {:?}", h);
+        total += (i+1) * h.cards().bid as usize
+    }
+    total
+    
 }
 
 fn solve_2(input: &str) -> usize {
@@ -211,5 +235,12 @@ fn test_suite_camel_hand_parse() {
     assert!( matches!(new_camel_hand("91915 500"),CamelHandType::TwoPair(_)));
     assert!( matches!(new_camel_hand("99123 500"),CamelHandType::OnePair(_)));
     assert!( matches!(new_camel_hand("12345 500"),CamelHandType::HighCard(_))); 
+
+    assert!( new_camel_hand("TJKA7 213") > new_camel_hand("TJ45K 434"));
+}
+
+#[test]
+fn test_solve() {
+    assert_eq!(solve(include_str!("../input_test")), 6440);
 }
 }
