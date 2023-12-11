@@ -80,7 +80,56 @@ fn new_camel_hand(input: &str) -> CamelHandType {
     }
 
 
+fn new_camel_hand_pt2(input: &str) -> CamelHandType {
+        let ch = new_hand(input);
+        let mut grouped_c = get_groups(&ch);    
 
+        //handle jokers
+        let jokers = &grouped_c.get(&'X');
+        if let Some(_) = jokers {
+            let max_key = &grouped_c
+            .iter()
+            .filter(|x| *x.0 != 'X')
+            .max_by(|a, b| a.1.cmp(&b.1))
+            .map(|(k, _v)| k);
+            if let None = max_key {
+                return CamelHandType::FiveOfaKind(ch);
+            }
+            let new_input = &input.replace("X", &max_key.unwrap().to_string()).clone();
+            grouped_c = get_groups(&new_hand(new_input));
+            
+            }
+
+        if grouped_c.len() == 1 {
+            return CamelHandType::FiveOfaKind(ch);
+        }
+    
+        let card_set_sizes = grouped_c.values().collect::<Vec<&i32>>();
+        if grouped_c.len() == 2 {
+            let first_group_len = *card_set_sizes[0];
+            if first_group_len == 1 ||  first_group_len == 4 {
+                return CamelHandType::FourOfaKind(ch);
+            }
+            return CamelHandType::FullHouse(ch);
+        }
+        
+        if grouped_c.len() == 3 {
+            let max_pairs = *card_set_sizes.iter().max().unwrap();
+            if *max_pairs == 3 {
+                return CamelHandType::ThreeOfaKind(ch);
+            }
+            if card_set_sizes.iter().filter(|x| ***x == 2).collect::<Vec<_>>().len() == 2 {
+                return CamelHandType::TwoPair(ch);
+            }
+        }
+        if grouped_c.len() == 4 {
+            return CamelHandType::OnePair(ch);
+        }
+        
+        CamelHandType::HighCard(ch)  
+        }
+    
+    
 impl PartialOrd for CamelHandType<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -125,6 +174,7 @@ fn rank_cards(c: char) -> i32 {
         'Q' => 12,
         'J' => 11,
         'T' => 10,
+        'X' => -1,  //going to swap J for X for part 2 and I'm too lazy to abstract this part
         _ => panic!("unknown card value for {}", c)
     }
 }
@@ -177,16 +227,12 @@ impl PartialEq for CamelHand<'_> {
 
 impl Eq for CamelHand<'_> {}
 
-fn parse_input(input: &str) -> Vec<CamelHandType<'_>>{
-    input.lines().map(new_camel_hand).collect::<Vec<CamelHandType>>()
-}
-
 fn solve(input: &str) -> usize {
-    let mut hands = parse_input(input);
+    let mut hands = input.lines().map(new_camel_hand).collect::<Vec<CamelHandType>>();
     hands.sort();
     let mut total = 0;
     for (i, h) in hands.iter().enumerate() {
-        println!("{i} {:?}", h);
+        // println!("{i} {:?}", h);
         total += (i+1) * h.cards().bid as usize
     }
     total
@@ -194,8 +240,19 @@ fn solve(input: &str) -> usize {
 }
 
 fn solve_2(input: &str) -> usize {
-    let _directions = parse_input(input);
-    10
+    let input_x = input.replace("J", "X");
+    let mut hands = input_x
+        .lines()
+        .map(new_camel_hand_pt2)
+        .collect::<Vec<CamelHandType>>();
+
+    hands.sort();
+    let mut total = 0;
+    for (i, h) in hands.iter().enumerate() {
+        // println!("{i} {:?}", h);
+        total += (i+1) * h.cards().bid as usize
+    }
+    total
 }
 
 #[cfg(test)]
@@ -243,4 +300,10 @@ fn test_suite_camel_hand_parse() {
 fn test_solve() {
     assert_eq!(solve(include_str!("../input_test")), 6440);
 }
+
+#[test]
+fn test_solve_2() {
+    assert_eq!(solve_2(include_str!("../input_test")), 5905);
+}
+
 }
