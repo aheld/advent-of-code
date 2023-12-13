@@ -70,7 +70,7 @@ fn solve_2(input: &str) -> usize {
         counts.insert(location.to_string(), count);
     }
 
-    dbg!(&counts);
+    println!("{:?}", counts);
     least_common_multiple(&counts.values().cloned().collect::<Vec<_>>())
 }
 

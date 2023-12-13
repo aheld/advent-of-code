@@ -16,6 +16,7 @@ help:
 	@echo ""
 	@echo "make calendar"
 
+.Silent: newday
 newday:
 	if [ -d "./$(DIRECTORY)" ]; then \
 	    echo "Dir exists"; \

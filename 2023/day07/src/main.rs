@@ -5,14 +5,13 @@ fn main() {
     println!("Part 2: {}", solve_2(include_str!("../input")));
 }
 
-#[derive( Debug)]
+#[derive(Debug)]
 struct CamelHand<'a> {
     cards: &'a str,
-    bid: i32
+    bid: i32,
 }
 
-
-#[derive( Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 enum CamelHandType<'a> {
     FiveOfaKind(CamelHand<'a>),
     FourOfaKind(CamelHand<'a>),
@@ -23,113 +22,86 @@ enum CamelHandType<'a> {
     HighCard(CamelHand<'a>),
 }
 
-fn new_hand(input: &str) -> CamelHand {
-    let hand =  if let Some((cards, bid)) = input.split_once(' ') {
-        CamelHand { cards, bid: bid.parse().unwrap() }
-    }
-    else {
-        panic!("Can't parse card input {input}'");
-    };
-    hand
-}
-
-
-fn get_groups(ch: &CamelHand) -> HashMap<char, i32>{
-    let cards: Vec<char> = ch.cards.chars().collect();
-
-    let mut grouped_c: HashMap<char, i32> = HashMap::new();
-
-    for c in cards {
-        grouped_c.entry(c).and_modify(|cnt| { *cnt += 1 }).or_insert(1);
+impl CamelHand<'_> {
+    pub fn new_hand(input: &str) -> CamelHand {
+        let hand = if let Some((cards, bid)) = input.split_once(' ') {
+            CamelHand {
+                cards,
+                bid: bid.parse().unwrap(),
+            }
+        } else {
+            panic!("Can't parse card input {input}'");
+        };
+        hand
     }
 
-    grouped_c
+    pub fn get_groups(ch: &CamelHand) -> HashMap<char, i32> {
+        let cards: Vec<char> = ch.cards.chars().collect();
+    
+        let mut grouped_c: HashMap<char, i32> = HashMap::new();
+    
+        for c in cards {
+            grouped_c.entry(c).and_modify(|cnt| *cnt += 1).or_insert(1);
+        }
+    
+        grouped_c
+    }
+
+    fn consolidate_jokers(grouped_c: &mut HashMap<char, i32>) {
+        let jokers = grouped_c.get(&'X');
+        if let Some(j_count) = jokers {
+            let max_key = &grouped_c
+                .clone()
+                .into_iter()
+                .filter(|x| x.0 != 'X')
+                .max_by(|a, b| a.1.cmp(&b.1))
+                .map(|(k, _v)| k);
+    
+            match max_key {
+                Some(k) => {
+                    println!("Adding {:?} for X-{:?} for {:?}", k, j_count, max_key);
+                    dbg!(&grouped_c);
+                    *grouped_c.entry(*k).or_insert(0) += grouped_c[&'X'];
+                    grouped_c.remove(&'X');
+                    dbg!(&grouped_c);
+                }
+                None => (), // All Jokers!
+            }
+        }
+    }
+    
 }
+
 
 fn new_camel_hand(input: &str) -> CamelHandType {
-    let ch = new_hand(input);
-    let grouped_c = get_groups(&ch);    
+    let ch = CamelHand::new_hand(input);
+    let mut grouped_c = CamelHand::get_groups(&ch);
 
-    if grouped_c.len() == 1 {
+    CamelHand::consolidate_jokers(&mut grouped_c); // this is the enhancement for part 2
+
+    if grouped_c.values().any(|v| *v == 5) {
         return CamelHandType::FiveOfaKind(ch);
     }
-
-    let card_set_sizes = grouped_c.values().collect::<Vec<&i32>>();
-    if grouped_c.len() == 2 {
-        let first_group_len = *card_set_sizes[0];
-        if first_group_len == 1 ||  first_group_len == 4 {
-            return CamelHandType::FourOfaKind(ch);
-        }
-        return CamelHandType::FullHouse(ch);
+    if grouped_c.values().any(|v| *v == 4) {
+        return CamelHandType::FourOfaKind(ch);
     }
-    
-    if grouped_c.len() == 3 {
-        let max_pairs = *card_set_sizes.iter().max().unwrap();
-        if *max_pairs == 3 {
+    if grouped_c.values().any(|v| *v == 3) {
+        if grouped_c.values().any(|v| *v == 2) {
+            return CamelHandType::FullHouse(ch);
+        } else {
             return CamelHandType::ThreeOfaKind(ch);
         }
-        if card_set_sizes.iter().filter(|x| ***x == 2).collect::<Vec<_>>().len() == 2 {
-            return CamelHandType::TwoPair(ch);
-        }
     }
-    if grouped_c.len() == 4 {
+    if grouped_c.values().filter(|v| **v == 2).count() == 2 {
+        return CamelHandType::TwoPair(ch);
+    }
+    if grouped_c.values().filter(|v| **v == 2).count() == 1 {
         return CamelHandType::OnePair(ch);
     }
-    
-    CamelHandType::HighCard(ch)  
-    }
 
+    CamelHandType::HighCard(ch)
+}
 
-fn new_camel_hand_pt2(input: &str) -> CamelHandType {
-        let ch = new_hand(input);
-        let mut grouped_c = get_groups(&ch);    
-
-        //handle jokers
-        let jokers = &grouped_c.get(&'X');
-        if let Some(_) = jokers {
-            let max_key = &grouped_c
-            .iter()
-            .filter(|x| *x.0 != 'X')
-            .max_by(|a, b| a.1.cmp(&b.1))
-            .map(|(k, _v)| k);
-            if let None = max_key {
-                return CamelHandType::FiveOfaKind(ch);
-            }
-            let new_input = &input.replace("X", &max_key.unwrap().to_string()).clone();
-            grouped_c = get_groups(&new_hand(new_input));
-            
-            }
-
-        if grouped_c.len() == 1 {
-            return CamelHandType::FiveOfaKind(ch);
-        }
-    
-        let card_set_sizes = grouped_c.values().collect::<Vec<&i32>>();
-        if grouped_c.len() == 2 {
-            let first_group_len = *card_set_sizes[0];
-            if first_group_len == 1 ||  first_group_len == 4 {
-                return CamelHandType::FourOfaKind(ch);
-            }
-            return CamelHandType::FullHouse(ch);
-        }
-        
-        if grouped_c.len() == 3 {
-            let max_pairs = *card_set_sizes.iter().max().unwrap();
-            if *max_pairs == 3 {
-                return CamelHandType::ThreeOfaKind(ch);
-            }
-            if card_set_sizes.iter().filter(|x| ***x == 2).collect::<Vec<_>>().len() == 2 {
-                return CamelHandType::TwoPair(ch);
-            }
-        }
-        if grouped_c.len() == 4 {
-            return CamelHandType::OnePair(ch);
-        }
-        
-        CamelHandType::HighCard(ch)  
-        }
-    
-    
 impl PartialOrd for CamelHandType<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -138,28 +110,27 @@ impl PartialOrd for CamelHandType<'_> {
 
 impl CamelHandType<'_> {
     fn rank(&self) -> i16 {
-            match &self {
-                CamelHandType::FiveOfaKind(_) => 7,
-                CamelHandType::FourOfaKind(_) => 6,
-                CamelHandType::FullHouse(_) => 5,
-                CamelHandType::ThreeOfaKind(_) => 4,
-                CamelHandType::TwoPair(_) => 3,
-                CamelHandType::OnePair(_) => 2,
-                CamelHandType::HighCard(_) => 1,
-            }
+        match &self {
+            CamelHandType::FiveOfaKind(_) => 7,
+            CamelHandType::FourOfaKind(_) => 6,
+            CamelHandType::FullHouse(_) => 5,
+            CamelHandType::ThreeOfaKind(_) => 4,
+            CamelHandType::TwoPair(_) => 3,
+            CamelHandType::OnePair(_) => 2,
+            CamelHandType::HighCard(_) => 1,
+        }
     }
 
     // This feels wrong
     fn cards(&self) -> &CamelHand {
         match &self {
-            Self::FiveOfaKind(c) | 
-                Self::FourOfaKind(c) | 
-                Self::FullHouse(c) |
-                Self::ThreeOfaKind(c) |
-                Self::TwoPair(c) |
-                Self::OnePair(c) |
-                Self::HighCard(c)
-                => c,
+            Self::FiveOfaKind(c)
+            | Self::FourOfaKind(c)
+            | Self::FullHouse(c)
+            | Self::ThreeOfaKind(c)
+            | Self::TwoPair(c)
+            | Self::OnePair(c)
+            | Self::HighCard(c) => c,
         }
     }
 }
@@ -174,8 +145,8 @@ fn rank_cards(c: char) -> i32 {
         'Q' => 12,
         'J' => 11,
         'T' => 10,
-        'X' => -1,  //going to swap J for X for part 2 and I'm too lazy to abstract this part
-        _ => panic!("unknown card value for {}", c)
+        'X' => -1, //going to swap J for X for part 2 and I'm too lazy to abstract this part
+        _ => panic!("unknown card value for {}", c),
     }
 }
 
@@ -184,18 +155,17 @@ impl Ord for CamelHandType<'_> {
         // println!("Here {:?} vs {:?}", &self, &other);
         // println!("{:?} vs {:?}", &self.rank(), &other.rank());
         if self.rank().eq(&other.rank()) {
-            for (s,o) in self.cards().cards.chars().zip(other.cards().cards.chars()) {
+            for (s, o) in self.cards().cards.chars().zip(other.cards().cards.chars()) {
                 // println!("{} : {}", s, o);
                 // println!("{} : {}", rank_cards(s), rank_cards(o));
                 if rank_cards(s) == rank_cards(o) {
-                    continue
+                    continue;
                 } else {
                     return rank_cards(s).cmp(&rank_cards(o));
                 }
             }
             return Ordering::Equal;
-            }
-        else {
+        } else {
             return self.rank().cmp(&other.rank());
         }
     }
@@ -209,10 +179,12 @@ impl PartialOrd for CamelHand<'_> {
 
 impl Ord for CamelHand<'_> {
     fn cmp(&self, other: &Self) -> Ordering {
-        let me:&Vec<char> = &self.cards.chars().collect();
-        let them: &Vec<char>= &other.cards.chars().collect();
+        let me: &Vec<char> = &self.cards.chars().collect();
+        let them: &Vec<char> = &other.cards.chars().collect();
         for (i, _) in me.iter().enumerate() {
-            if me[i] == them[i] { continue; }
+            if me[i] == them[i] {
+                continue;
+            }
             return me[i].cmp(&them[i]);
         }
         return std::cmp::Ordering::Equal;
@@ -228,31 +200,22 @@ impl PartialEq for CamelHand<'_> {
 impl Eq for CamelHand<'_> {}
 
 fn solve(input: &str) -> usize {
-    let mut hands = input.lines().map(new_camel_hand).collect::<Vec<CamelHandType>>();
+    let mut hands = input
+        .lines()
+        .map(new_camel_hand)
+        .collect::<Vec<CamelHandType>>();
     hands.sort();
     let mut total = 0;
     for (i, h) in hands.iter().enumerate() {
         // println!("{i} {:?}", h);
-        total += (i+1) * h.cards().bid as usize
+        total += (i + 1) * h.cards().bid as usize
     }
     total
-    
 }
 
 fn solve_2(input: &str) -> usize {
-    let input_x = input.replace("J", "X");
-    let mut hands = input_x
-        .lines()
-        .map(new_camel_hand_pt2)
-        .collect::<Vec<CamelHandType>>();
-
-    hands.sort();
-    let mut total = 0;
-    for (i, h) in hands.iter().enumerate() {
-        // println!("{i} {:?}", h);
-        total += (i+1) * h.cards().bid as usize
-    }
-    total
+    let input = input.replace("J", "X");
+    solve(&input)
 }
 
 #[cfg(test)]
@@ -261,49 +224,84 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
+    // Note - I don't commit real inputs as per AOC rules.
+    const INPUT: &str = include_str!("../input");
+    const TEST_INPUT: &str = include_str!("../input_test");
+
     fn get_fixtures_hands() -> HashMap<&'static str, CamelHand<'static>> {
         let mut hands = HashMap::new();
-        hands.insert("hand1", new_hand("12345 123"));
-        hands.insert("hand1_same", new_hand("12345 124"));
-        hands.insert("hand2", new_hand("23456 124"));
-        hands.insert("hand122", new_hand("12234 124"));
+        hands.insert("hand1", CamelHand::new_hand("12345 123"));
+        hands.insert("hand1_same", CamelHand::new_hand("12345 124"));
+        hands.insert("hand2", CamelHand::new_hand("23456 124"));
+        hands.insert("hand122", CamelHand::new_hand("12234 124"));
         hands
     }
-    
-#[test]
-fn test_suite_camel_hand() {
-    let h = get_fixtures_hands();
-    assert_eq!(h.get("hand1").unwrap(), h.get("hand1_same").unwrap());
-    assert!(h.get("hand1").unwrap() <h.get("hand2").unwrap());
-    assert!(h.get("hand1").unwrap() <h.get("hand2").unwrap());
-    assert!(h.get("hand122").unwrap() <h.get("hand2").unwrap());
-    assert!(h.get("hand122").unwrap() <h.get("hand1").unwrap());
-}
 
-#[test]
-fn test_suite_camel_hand_parse() {
-    let hand = new_hand("55555 500");
-    assert_eq!(hand, CamelHand{cards: "55555", bid: 500});
+    #[test]
+    fn test_suite_camel_hand() {
+        let h = get_fixtures_hands();
+        assert_eq!(h.get("hand1").unwrap(), h.get("hand1_same").unwrap());
+        assert!(h.get("hand1").unwrap() < h.get("hand2").unwrap());
+        assert!(h.get("hand1").unwrap() < h.get("hand2").unwrap());
+        assert!(h.get("hand122").unwrap() < h.get("hand2").unwrap());
+        assert!(h.get("hand122").unwrap() < h.get("hand1").unwrap());
+    }
 
-    assert!( matches!(new_camel_hand("55555 500"),CamelHandType::FiveOfaKind(_)));
-    assert!( matches!(new_camel_hand("15555 500"),CamelHandType::FourOfaKind(_)));
-    assert!( matches!(new_camel_hand("15551 500"),CamelHandType::FullHouse(_)));
-    assert!( matches!(new_camel_hand("95551 500"),CamelHandType::ThreeOfaKind(_)));
-    assert!( matches!(new_camel_hand("91915 500"),CamelHandType::TwoPair(_)));
-    assert!( matches!(new_camel_hand("99123 500"),CamelHandType::OnePair(_)));
-    assert!( matches!(new_camel_hand("12345 500"),CamelHandType::HighCard(_))); 
+    #[test]
+    fn test_suite_camel_hand_parse() {
+        let hand = CamelHand::new_hand("55555 500");
+        assert_eq!(
+            hand,
+            CamelHand {
+                cards: "55555",
+                bid: 500
+            }
+        );
 
-    assert!( new_camel_hand("TJKA7 213") > new_camel_hand("TJ45K 434"));
-}
+        assert!(matches!(
+            new_camel_hand("55555 500"),
+            CamelHandType::FiveOfaKind(_)
+        ));
+        assert!(matches!(
+            new_camel_hand("15555 500"),
+            CamelHandType::FourOfaKind(_)
+        ));
+        assert!(matches!(
+            new_camel_hand("15551 500"),
+            CamelHandType::FullHouse(_)
+        ));
+        assert!(matches!(
+            new_camel_hand("95551 500"),
+            CamelHandType::ThreeOfaKind(_)
+        ));
+        assert!(matches!(
+            new_camel_hand("91915 500"),
+            CamelHandType::TwoPair(_)
+        ));
+        assert!(matches!(
+            new_camel_hand("99123 500"),
+            CamelHandType::OnePair(_)
+        ));
+        assert!(matches!(
+            new_camel_hand("12345 500"),
+            CamelHandType::HighCard(_)
+        ));
 
-#[test]
-fn test_solve() {
-    assert_eq!(solve(include_str!("../input_test")), 6440);
-}
+        assert!(new_camel_hand("TJKA7 213") > new_camel_hand("TJ45K 434"));
+    }
 
-#[test]
-fn test_solve_2() {
-    assert_eq!(solve_2(include_str!("../input_test")), 5905);
-}
+    #[test]
+    fn test_solve() {
+        assert_eq!(solve(TEST_INPUT), 6440);
+    }
 
+    #[test]
+    fn test_solve_2() {
+        assert_eq!(solve_2(TEST_INPUT), 5905);
+    }
+    #[test]
+    fn test_real_inputs() {
+        assert_eq!(solve(INPUT), 251029473);
+        assert_eq!(solve_2(INPUT), 251003917);
+    }
 }
